@@ -1,0 +1,10 @@
+streamlit
+pytesseract
+opencv-python
+openai
+pillow
+numpy
+pdf2image
+pdfplumber
+requests
+python-dotenv
