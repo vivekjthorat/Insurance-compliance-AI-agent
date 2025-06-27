@@ -8,3 +8,4 @@ pdf2image
 pdfplumber
 requests
 python-dotenv
+opencv-python-headless
