@@ -22,8 +22,7 @@
 
 ## 🚀 Live Demo
 
-👉 [Click here to try the app live](https://your-app-url.streamlit.app)  
-*(Replace with your actual Streamlit link)*
+👉 [Click here to try the app live](https://insuregenie.streamlit.app)  
 
 ---
 
@@ -45,5 +44,5 @@
 
 ### 1. Clone the Repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/Insurance-compliance-AI-agent.git
+git clone https://github.com/vivekjthorat/Insurance-compliance-AI-agent.git
 cd Insurance-compliance-AI-agent
