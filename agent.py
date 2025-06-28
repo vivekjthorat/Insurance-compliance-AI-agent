@@ -2,7 +2,7 @@ import os
 import json
 import re
 import requests
-import streamlit as st  # NEW: to access st.secrets
+import streamlit as st  
 from dotenv import load_dotenv
 from ocr_tool import ocr_tool
 

@@ -202,35 +202,51 @@ if uploaded_file:
         st.info("PDF uploaded. All pages will be processed.")
     analyze = st.button("✨ Analyze Document", use_container_width=True)
     if analyze:
-        file_bytes = uploaded_file.read()
-        filename = uploaded_file.name
-        doc_id = save_upload(filename)
-        with st.spinner("Running OCR, summarization, and compliance checks..."):
-            ocr_text, extracted, validation = run_agent(file_bytes, filename)
-            summary = extracted.get("summary", "No summary available.")
-            compliance_results = run_compliance_checks(ocr_text)
-        save_metadata(doc_id, extracted)
-        save_validation(doc_id, validation["status"], validation["errors"])
-        # --- OCR & Summary Section ---
-        with st.expander("📝 View OCR Text", expanded=False):
-            st.markdown(f"<div class='ocr-card'><pre style='font-size:1em; color:#23272f;'>{ocr_text}</pre></div>", unsafe_allow_html=True)
-        with st.expander("📝 View Summary", expanded=True):
-            st.markdown(f"<div class='summary-card'>{summary}</div>", unsafe_allow_html=True)
-        # --- Compliance Checklist ---
-        st.markdown("<div class='compliance-card'><h3>✅ Compliance Checklist</h3>", unsafe_allow_html=True)
-        for check in compliance_results:
-            icon = "✅" if check['status'] == "✅" else "❌"
-            st.markdown(f"<span style='font-size:1.1em;'>{icon} <b>{check['check']}</b>: <span style='color:#23272f;'>{check['details']}</span></span>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-        # --- Validation Section ---
-        st.markdown("<div class='compliance-card'><h3>🔎 Validation Result</h3>", unsafe_allow_html=True)
-        if validation["status"] == "✅":
-            st.success("All fields valid!", icon="✅")
-        else:
-            st.error("Validation errors:", icon="❌")
-            for err in validation["errors"]:
-                st.write(f"- {err}")
-        st.markdown("</div>", unsafe_allow_html=True)
+        try:
+            file_bytes = uploaded_file.read()
+            filename = uploaded_file.name
+            doc_id = save_upload(filename)
+            
+            with st.spinner("Running OCR, summarization, and compliance checks..."):
+                # Add debugging info
+                st.info(f"Processing file: {filename} ({len(file_bytes)} bytes)")
+                
+                ocr_text, extracted, validation = run_agent(file_bytes, filename)
+                summary = extracted.get("summary", "No summary available.")
+                compliance_results = run_compliance_checks(ocr_text)
+            
+            save_metadata(doc_id, extracted)
+            save_validation(doc_id, validation["status"], validation["errors"])
+            
+            # Show OCR text length for debugging
+            st.success(f"✅ OCR completed! Extracted {len(ocr_text)} characters.")
+            
+            # --- OCR & Summary Section ---
+            with st.expander("📝 View OCR Text", expanded=False):
+                st.markdown(f"<div class='ocr-card'><pre style='font-size:1em; color:#23272f;'>{ocr_text}</pre></div>", unsafe_allow_html=True)
+            with st.expander("📝 View Summary", expanded=True):
+                st.markdown(f"<div class='summary-card'>{summary}</div>", unsafe_allow_html=True)
+            # --- Compliance Checklist ---
+            st.markdown("<div class='compliance-card'><h3>✅ Compliance Checklist</h3>", unsafe_allow_html=True)
+            for check in compliance_results:
+                icon = "✅" if check['status'] == "✅" else "❌"
+                st.markdown(f"<span style='font-size:1.1em;'>{icon} <b>{check['check']}</b>: <span style='color:#23272f;'>{check['details']}</span></span>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            # --- Validation Section ---
+            st.markdown("<div class='compliance-card'><h3>🔎 Validation Result</h3>", unsafe_allow_html=True)
+            if validation["status"] == "✅":
+                st.success("All fields valid!", icon="✅")
+            else:
+                st.error("Validation errors:", icon="❌")
+                for err in validation["errors"]:
+                    st.write(f"- {err}")
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+        except Exception as e:
+            st.error(f"❌ Error processing document: {str(e)}")
+            st.info("Please check your API keys and try again.")
+            import traceback
+            st.code(traceback.format_exc())
 else:
     st.markdown("""
     <div style='color:#b0bec5;font-size:1.1em;margin-top:2em;'>

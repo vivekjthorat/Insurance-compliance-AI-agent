@@ -6,11 +6,12 @@ import io
 from pdf2image import convert_from_bytes
 import os
 
-# ✅ Set Tesseract path for Windows
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
-# ✅ Set Poppler path for Windows
-POPPLER_PATH = r'C:\poppler\poppler-24.08.0\Library\bin'
+# Set Tesseract path - works on both Windows and Linux
+# On Windows: C:\Program Files\Tesseract-OCR\tesseract.exe
+# On Linux (Streamlit Cloud): /usr/bin/tesseract
+if os.name == 'nt':  # Windows
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# On Linux, tesseract is usually in PATH, so no need to set it
 
 def preprocess_image(image_bytes):
     """
@@ -43,7 +44,8 @@ def ocr_tool(file_bytes, filename=None):
 
     if is_pdf:
         try:
-            images = convert_from_bytes(file_bytes, poppler_path=POPPLER_PATH)
+            # On Streamlit Cloud, poppler is installed in /usr/bin
+            images = convert_from_bytes(file_bytes)
         except Exception as e:
             print("❌ PDF to image conversion failed:", e)
             return ""
@@ -62,4 +64,3 @@ def ocr_tool(file_bytes, filename=None):
         preprocessed = preprocess_image(file_bytes)
         text = pytesseract.image_to_string(preprocessed)
         return text.strip()
-
