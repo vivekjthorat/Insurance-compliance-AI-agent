@@ -2,15 +2,16 @@ import os
 import json
 import re
 import requests
+import streamlit as st  # NEW: to access st.secrets
 from dotenv import load_dotenv
 from ocr_tool import ocr_tool
 
 # Load environment variables
 load_dotenv()
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY")
 
 if not GROQ_API_KEY:
-    raise RuntimeError("❌ GROQ_API_KEY not found in .env")
+    raise RuntimeError("❌ GROQ_API_KEY not found in environment or Streamlit secrets")
 
 # ----------------------------
 # Prompt Template
@@ -57,7 +58,6 @@ def summarize_tool(ocr_text):
     }
 
     data = {
-        # Use a currently supported Groq model (see https://console.groq.com/docs/models)
         "model": "llama3-70b-8192",
         "messages": [
             {"role": "system", "content": "You summarize insurance documents into bullet points for regular people."},
@@ -71,7 +71,6 @@ def summarize_tool(ocr_text):
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data)
         if response.status_code != 200:
             print(f"❌ Groq API error: {response.status_code} {response.text}")
-            # Always return a dict for extracted
             return {"summary": f"❌ Groq API error: {response.status_code} {response.text}"}
         content = response.json()["choices"][0]["message"]["content"].strip()
         return {"summary": content}
@@ -103,19 +102,13 @@ def validate_tool(fields):
     return {"status": status, "errors": errors}
 
 def run_compliance_checks(ocr_text):
-    """
-    Run compliance checks on OCR text for critical insurance info.
-    Returns a list of dicts: {check, status, details}
-    """
     checks = []
-    # 1. Policy number (alphanumeric, at least 6 chars)
     policy_match = re.search(r'(policy\s*no\.?|policy\s*number)[:\s]*([A-Za-z0-9\-/]{6,})', ocr_text, re.IGNORECASE)
     checks.append({
         'check': 'Policy Number Present',
         'status': '✅' if policy_match else '❌',
         'details': policy_match.group(0) if policy_match else 'Not found'
     })
-    # 2. Start and End Dates (DD/MM/YYYY)
     date_matches = re.findall(r'(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}', ocr_text)
     checks.append({
         'check': 'Start Date Present',
@@ -127,7 +120,6 @@ def run_compliance_checks(ocr_text):
         'status': '✅' if len(date_matches) >= 2 else '❌',
         'details': date_matches[1] if len(date_matches) >= 2 else 'Not found'
     })
-    # 3. Insurer name (common insurers)
     insurers = ["LIC", "HDFC", "Bajaj", "ICICI", "SBI", "Max Life", "Tata", "Aditya Birla", "Kotak", "Reliance"]
     insurer_found = next((name for name in insurers if re.search(rf'\b{name}\b', ocr_text, re.IGNORECASE)), None)
     checks.append({
@@ -135,7 +127,6 @@ def run_compliance_checks(ocr_text):
         'status': '✅' if insurer_found else '❌',
         'details': insurer_found or 'Not found'
     })
-    # 4. Coverage terms (keywords)
     coverage_terms = ["hospitalization", "coverage", "sum insured", "benefit", "treatment", "medical"]
     coverage_found = next((term for term in coverage_terms if re.search(term, ocr_text, re.IGNORECASE)), None)
     checks.append({
@@ -143,7 +134,6 @@ def run_compliance_checks(ocr_text):
         'status': '✅' if coverage_found else '❌',
         'details': coverage_found or 'Not found'
     })
-    # 5. Exclusions section
     exclusions_found = re.search(r'(exclusions|not covered)', ocr_text, re.IGNORECASE)
     checks.append({
         'check': 'Exclusions Section Present',
